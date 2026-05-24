@@ -6,8 +6,6 @@ const cors = require("cors");
 const ejs = require("ejs");
 
 require("dotenv").config();
-const mongoURI = process.env.MONGO_URI;
-const dbName = "question-name";
 const port = process.env.PORT;
 
 // Create the app
@@ -30,10 +28,6 @@ app.set("layout", "layouts/base");
 const questionRouter = require("./routes/questionRoutes");
 
 app.use("/question", questionRouter);
-
-// app.get("/", (req, res) => {
-//   res.render("questions/bank");
-// });
 
 // Run the app
 app.listen(port, () => {
