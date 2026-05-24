@@ -27,9 +27,13 @@ app.use(express.urlencoded({ extended: true }));
 app.set("layout", "layouts/base");
 
 // Routes
-app.get("/", (req, res) => {
-  res.render("questions/bank");
-});
+const questionRouter = require("./routes/questionRoutes");
+
+app.use("/question", questionRouter);
+
+// app.get("/", (req, res) => {
+//   res.render("questions/bank");
+// });
 
 // Run the app
 app.listen(port, () => {
