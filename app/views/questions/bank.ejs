@@ -1,5 +1,53 @@
 <%- contentFor("body") %>
 <h1 class="question-bank-title">Lists of Questions</h1>
 <div class="question-content">
-  <div class="question"></div>
+  <% questions.forEach((question) => { %>
+  <div class="question-card">
+    <div class="meta-header">
+      <div class="badges">
+        <span class="badge difficulty"><%- question?.difficulty %></span>
+        <span class="badge topic"><%- question?.topicInfo?.name %></span>
+        <span class="badge subject"><%- question?.subjectInfo?.name %></span>
+      </div>
+      <span class="author">By: <%- question?.authorInfo?.name %></span>
+    </div>
+
+    <h3><%- question?.text %></h3>
+
+    <ul class="options-list">
+      <% question?.options.forEach((option, index) => { %>
+      <li class="option" id="<%- option %>">
+        <span><%- String.fromCharCode(65 + index) %>. </span> <%- option %>
+      </li>
+      <% })%>
+    </ul>
+
+    <div class="action-area">
+      <button class="reveal-btn" data-answer="<%- question?.correctAnswer %>">
+        Reveal Answer
+      </button>
+    </div>
+  </div>
+  <% }) %>
 </div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const buttons = document.querySelectorAll(".reveal-btn");
+
+    buttons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const answerKey = button.dataset.answer;
+
+        const correctAnswer = document.getElementById(`${answerKey}`);
+        correctAnswer.classList.toggle("reveal");
+
+        if (button.textContent.trim() === "Reveal Answer") {
+          button.textContent = "Hide Answer";
+        } else {
+          button.textContent = "Reveal Answer";
+        }
+      });
+    });
+  });
+</script>
