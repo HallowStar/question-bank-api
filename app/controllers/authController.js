@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 
 const { ObjectId } = require("mongodb");
 const { generateAccessToken } = require("../middleware/authentication");
+const { isValidEmail } = require("../utils/validation");
 
 const registerUser = async (req, res) => {
   try {
@@ -32,9 +33,9 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ error: "Missing Required Fields" });
     }
 
-    if (!email.includes("@")) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (isValidEmail(cleanEmail))
       return res.status(400).json({ error: "Invalid Email Format" });
-    }
 
     // Check if date format or value is valid
     const birthFormat = new Date(birthDate);
@@ -57,7 +58,7 @@ const registerUser = async (req, res) => {
     // Check if email already exists
     const user = await db
       .collection("users")
-      .findOne({ "contact.email": email });
+      .findOne({ "contact.email": cleanEmail });
 
     if (user) return res.status(400).json({ error: "User already exists" });
 
@@ -70,7 +71,7 @@ const registerUser = async (req, res) => {
       birthDate: new Date(birthDate),
       role,
       address,
-      contact: { number: Number(contact), email: email },
+      contact: { number: Number(contact), email: cleanEmail },
       passwordHash,
     };
 
@@ -96,9 +97,10 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ error: "Email & Password Required" });
     }
 
-    if (!email.includes("@")) {
-      return res.status(400).json({ error: "Invalid Email Format" });
-    }
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!isValidEmail(cleanEmail))
+      return res.status(400).json({ error: "Invalid email format" });
 
     const user = await db
       .collection("users")
@@ -123,4 +125,4 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, registerForm, loginUser };
+module.exports = { registerUser, loginUser };

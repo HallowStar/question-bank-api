@@ -1,5 +1,7 @@
-// function isValidEmail(email) {
-//   if (!email.includes("@")) return false;
+function isValidEmail(email) {
+  const regex = /^[\w+]@[\w]+\.[\w]+$/;
 
-//   if()
-// }
+  return regex.test(email);
+}
+
+module.exports = { isValidEmail };
