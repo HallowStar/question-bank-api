@@ -7,17 +7,21 @@ async function connectDb(mongoUri, dbName) {
     return client.db(dbName);
   }
 
-  client = new MongoClient(mongoUri, {
-    serverApi: {
-      version: ServerApiVersion.v1,
-    },
-  });
+  try {
+    client = new MongoClient(mongoUri, {
+      serverApi: {
+        version: ServerApiVersion.v1,
+      },
+    });
 
-  await client.connect;
+    await client.connect;
 
-  console.log("Client Connected");
+    console.log("MongoDB Connected");
 
-  return client.db(dbName);
+    return client.db(dbName);
+  } catch (error) {
+    console.error("MongoDB not connected");
+  }
 }
 
 module.exports = { connectDb };

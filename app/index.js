@@ -42,8 +42,7 @@ async function main() {
     app.use("/question", questionRouter);
     app.use("/user", authRouter);
   } catch (error) {
-    console.error("Error Fetching recipe: ", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("MongoDB not Connected: ", error);
   }
 }
 
