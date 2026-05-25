@@ -1,13 +1,6 @@
-require("dotenv").config();
-const mongoURI = process.env.MONGO_URI;
-const dbName = "question-bank";
-const port = process.env.PORT;
-
-const { connectDb } = require("../config/db");
-
 const getQuestions = async (req, res) => {
   try {
-    const db = await connectDb(mongoURI, dbName);
+    const db = req.app.locals.db;
 
     const questions = await db
       .collection("questions")
@@ -69,16 +62,13 @@ const getQuestions = async (req, res) => {
       .toArray();
 
     if (questions.length == 0) {
-      res.status(400).render("error", {
-        error: { statusCode: 404, message: error.message },
-      });
+      return res.status(400).json({ error: "No questions found" });
     }
 
-    res.render("questions/bank", { questions });
+    // res.render("questions/bank", { questions });
+    return res.status(200).json({ questions });
   } catch (error) {
-    res
-      .status(500)
-      .render("error", { error: { statusCode: 500, message: error.message } });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
