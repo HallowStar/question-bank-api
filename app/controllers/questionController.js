@@ -77,6 +77,8 @@ const getQuestions = async (req, res) => {
 const searchQuestion = async (req, res) => {
   const { name, difficulty, topic, subject } = req.query;
 
+  // Input Validation
+
   try {
     const db = req.app.locals.db;
 
@@ -90,29 +92,33 @@ const searchQuestion = async (req, res) => {
     if (difficulty) {
       const difficultyArray = difficulty.split(",");
 
+      difficultyArray.map((d) => d.toLowerCase());
+
       query.difficulty = { $in: difficultyArray };
     }
 
     // Check if topic exist in the database
     if (topic) {
-      const topicDb = await db.collection("topics").findOne({ code: topic });
+      const topicDb = await db
+        .collection("topics")
+        .findOne({ code: topic.toUpperCase() });
 
       if (!topicDb)
         return res.status(400).json({ message: "Topic does not exist" });
 
-      query.topic = topicDb._id;
+      query.topicId = topicDb._id;
     }
 
     // Check if subject exist in the database
     if (subject) {
       const subjectDb = await db
         .collection("subjects")
-        .findOne({ code: subject });
+        .findOne({ code: subject.toUpperCase() });
 
       if (!subjectDb)
         return res.status(400).json({ message: "Topic does not exist" });
 
-      query.subject = subjectDb._id;
+      query.subjectId = subjectDb._id;
     }
 
     // Get results based on the query
