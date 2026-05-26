@@ -38,8 +38,12 @@ async function main() {
     // Routes
     const questionRouter = require("./routes/questionRoutes");
     const authRouter = require("./routes/authRoutes");
+    const subjectRouter = require("./routes/subjectRoutes");
+    const topicRouter = require("./routes/topicRoutes");
 
     app.use("/question", questionRouter);
+    app.use("/subject", subjectRouter);
+    app.use("/topic", topicRouter);
     app.use("/user", authRouter);
   } catch (error) {
     console.error("MongoDB not Connected: ", error);
