@@ -1,5 +1,5 @@
 function isValidEmail(email) {
-  const regex = /^[\w+]@[\w]+\.[\w]+$/;
+  const regex = /^[\w]+@[\w]+\.[\w]+$/;
 
   return regex.test(email);
 }

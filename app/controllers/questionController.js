@@ -1,3 +1,5 @@
+const { ObjectId } = require("mongodb");
+
 // Get Lists of Questions
 const getQuestions = async (req, res) => {
   try {
@@ -73,11 +75,9 @@ const getQuestions = async (req, res) => {
   }
 };
 
-// Search questions based on name
+// Search questions based on name, difficulty, topic, subject
 const searchQuestion = async (req, res) => {
   const { name, difficulty, topic, subject } = req.query;
-
-  // Input Validation
 
   try {
     const db = req.app.locals.db;
@@ -137,12 +137,88 @@ const searchQuestion = async (req, res) => {
   }
 };
 
-// Filter questions based on query (topic, subject, difficulty)
-
 // Add question (only teacher)
+const addQuestion = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { userId } = req.user;
+    const {
+      text,
+      options,
+      correctAnswer,
+      difficulty,
+      tags,
+      topicCode,
+      subjectCode,
+    } = req.body;
+
+    // Check if user is a teacher
+    const user = await db
+      .collection("users")
+      .findOne({ _id: new ObjectId(userId) });
+
+    if (user.role !== "teacher")
+      return res
+        .status(401)
+        .json({ message: "You must be a teacher to proceed" });
+
+    // Input Validation
+    if (!text || !correctAnswer || !difficulty || !topicCode || !subjectCode) {
+      return res.status(400).json({ message: "Missing required field" });
+    }
+
+    const cleanDifficulty = difficulty.trim().toLowerCase();
+
+    console.log(cleanDifficulty);
+
+    // Check if difficulty is valid
+    if (
+      cleanDifficulty !== "medium" &&
+      cleanDifficulty !== "easy" &&
+      cleanDifficulty !== "hard"
+    )
+      return res.status(400).json({ message: "Difficulty not valid" });
+
+    // Check if tags are empty
+    if (tags.length == 0)
+      return res.status(400).json({ message: "Missing Tags" });
+
+    // Check if topic & subject exist
+    const topicDb = await db.collection("topics").findOne({ code: topicCode });
+    if (!topicDb)
+      return res.status(404).json({ message: "Topic does not exist" });
+
+    const subjectDb = await db
+      .collection("subjects")
+      .findOne({ code: subjectCode });
+    if (!subjectDb)
+      return res.status(404).json({ message: "Subject does not exist" });
+
+    // Add question
+    const newQuestion = {
+      id: new ObjectId(),
+      text,
+      difficulty: cleanDifficulty,
+      options,
+      correctAnswer,
+      tags,
+      authorId: user._id,
+      topicId: topicDb._id,
+      subjectDb: subjectDb._id,
+    };
+
+    const result = await db.collection("questions").insertOne(newQuestion);
+
+    res.status(200).json({ message: "Question added successfully", result });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
 
 // Edit question (only teacher that has the question)
 
 // Remove question (only for teacher that has the question)
 
-module.exports = { getQuestions, searchQuestion };
+module.exports = { getQuestions, searchQuestion, addQuestion };

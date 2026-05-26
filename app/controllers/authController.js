@@ -34,7 +34,7 @@ const registerUser = async (req, res) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    if (isValidEmail(cleanEmail))
+    if (!isValidEmail(cleanEmail))
       return res.status(400).json({ error: "Invalid Email Format" });
 
     // Check if date format or value is valid
@@ -82,7 +82,9 @@ const registerUser = async (req, res) => {
       .status(200)
       .json({ message: "Account Created Successfully", result });
   } catch (error) {
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ error: "Internal Server Error", error: error.message });
   }
 };
 
@@ -121,10 +123,10 @@ const loginUser = async (req, res) => {
 
     return res.status(200).json({ message: "Login Successfull", accessToken });
   } catch (error) {
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ error: "Internal Server Error", error: error.message });
   }
 };
-
-
 
 module.exports = { registerUser, loginUser };

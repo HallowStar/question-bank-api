@@ -15,7 +15,9 @@ const getSubjects = async (req, res) => {
     // res.render("questions/bank", { questions });
     return res.status(200).json({ subjects });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", error: error.message });
   }
 };
 
