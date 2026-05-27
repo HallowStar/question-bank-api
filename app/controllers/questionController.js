@@ -78,7 +78,7 @@ const getQuestions = async (req, res) => {
 // Search questions based on name, difficulty, topic, subject
 const searchQuestion = async (req, res) => {
   try {
-    const { name, difficulty, topic, subject } = req.query;
+    const { name, difficulty, topic, subject, tags } = req.query;
 
     const db = req.app.locals.db;
 
@@ -107,6 +107,12 @@ const searchQuestion = async (req, res) => {
         return res.status(400).json({ message: "Topic does not exist" });
 
       query.topicId = topicDb._id;
+    }
+
+    // Check by tag
+    if (tags.length > 0) {
+      const tagArray = tags.split(",").map((tag) => tag.toLowerCase());
+      query.tags = { $in: tagArray };
     }
 
     // Check if subject exist in the database
@@ -220,7 +226,7 @@ const addQuestion = async (req, res) => {
       difficulty: cleanDifficulty,
       options,
       correctAnswer,
-      tags,
+      tags: tags.map((tag) => tag.toLowerCase()),
       authorId: new ObjectId(userId),
       topicId: topicDb._id,
       subjectDb: subjectDb._id,
@@ -344,17 +350,22 @@ const editQuestion = async (req, res) => {
       .status(200)
       .json({ message: "Question updated successfully", result });
   } catch (error) {
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
+// Delete question
 const deleteQuestion = async (req, res) => {
   try {
     const db = req.app.locals.db;
     const { id } = req.params;
+    const { userId } = req.params;
 
     const result = await db.collection("questions").deleteOne({
       _id: new ObjectId(id),
+      authorId: new ObjectId(userId),
     });
 
     if (result.deletedCount === 0) {
@@ -365,7 +376,7 @@ const deleteQuestion = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Question Deleted Successfully", result });
+      .json({ message: "Question Deleted Successfully", error: error.message });
   }
 };
 
