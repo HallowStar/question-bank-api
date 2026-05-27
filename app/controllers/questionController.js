@@ -20,6 +20,7 @@ const getQuestions = async (req, res) => {
         {
           $unwind: {
             path: "$topicInfo",
+            preserveNullAndEmptyArrays: true,
           },
         },
         {
@@ -33,15 +34,13 @@ const getQuestions = async (req, res) => {
         {
           $unwind: {
             path: "$subjectInfo",
+            preserveNullAndEmptyArrays: true,
           },
         },
         {
           $project: {
-            _id: 0,
             topicId: 0,
             subjectId: 0,
-            "topicInfo._id": 0,
-            "subjectInfo._id": 0,
           },
         },
       ])
@@ -59,6 +58,24 @@ const getQuestions = async (req, res) => {
 };
 
 // Search Question by id
+const searchQuestionById = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { id } = req.params;
+
+    console.log(id);
+
+    const result = await db
+      .collection("questions")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!result) return res.status(400).json({ message: "Question not found" });
+
+    return res.status(200).json({ message: "Question found", result });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 // Search questions based on name, difficulty, topic, subject, tags
 const searchQuestion = async (req, res) => {
@@ -518,6 +535,7 @@ const deleteAnswer = async (req, res) => {
 module.exports = {
   getQuestions,
   searchQuestion,
+  searchQuestionById,
   addQuestion,
   editQuestion,
   deleteQuestion,
