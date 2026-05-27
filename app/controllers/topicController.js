@@ -44,6 +44,24 @@ const getTopics = async (req, res) => {
   }
 };
 
+// Search Topic by id
+const searchTopicById = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { id } = req.params;
+
+    const result = await db
+      .collection("topics")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!result) return res.status(400).json({ message: "Topic not found" });
+
+    return res.status(200).json({ message: "Topic found", result });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // Add question (only teacher)
 const addTopic = async (req, res) => {
   try {
@@ -169,9 +187,7 @@ const deleteTopic = async (req, res) => {
       return res.status(404).json({ message: "Subject not found" });
     }
 
-    await db
-      .collection("questions")
-      .deleteMany({ topicId: new ObjectId(id) });
+    await db.collection("questions").deleteMany({ topicId: new ObjectId(id) });
 
     return res.status(200).json({ message: "Topic deleted successfully" });
   } catch (error) {
@@ -181,4 +197,10 @@ const deleteTopic = async (req, res) => {
   }
 };
 
-module.exports = { getTopics, addTopic, editTopic, deleteTopic };
+module.exports = {
+  getTopics,
+  searchTopicById,
+  addTopic,
+  editTopic,
+  deleteTopic,
+};

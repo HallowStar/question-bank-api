@@ -24,6 +24,26 @@ const getSubjects = async (req, res) => {
   }
 };
 
+// Search Subject by id
+const searchSubjectById = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { id } = req.params;
+
+    console.log(id);
+
+    const result = await db
+      .collection("subjects")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!result) return res.status(400).json({ message: "Subject not found" });
+
+    return res.status(200).json({ message: "Subject found", result });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // Add question (only teacher)
 const addSubject = async (req, res) => {
   try {
@@ -147,4 +167,10 @@ const deleteSubject = async (req, res) => {
   }
 };
 
-module.exports = { getSubjects, addSubject, editSubject, deleteSubject };
+module.exports = {
+  getSubjects,
+  searchSubjectById,
+  addSubject,
+  editSubject,
+  deleteSubject,
+};
