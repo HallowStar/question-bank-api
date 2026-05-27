@@ -7,6 +7,8 @@ const {
   editQuestion,
   deleteQuestion,
   answerQuestion,
+  editAnswer,
+  deleteAnswer,
 } = require("../controllers/questionController");
 const { verifyAccessToken } = require("../middleware/authentication");
 
@@ -16,5 +18,7 @@ route.route("/").post(verifyAccessToken, addQuestion);
 route.route("/:id").put(verifyAccessToken, editQuestion);
 route.route("/:id").delete(verifyAccessToken, deleteQuestion);
 route.route("/:id/answer").post(verifyAccessToken, answerQuestion);
+route.route("/:id/answer/:answerId").put(verifyAccessToken, editAnswer);
+route.route("/:id/answer/:answerId").delete(verifyAccessToken, deleteAnswer);
 
 module.exports = route;

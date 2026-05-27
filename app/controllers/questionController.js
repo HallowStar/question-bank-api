@@ -58,6 +58,8 @@ const getQuestions = async (req, res) => {
   }
 };
 
+// Search Question by id
+
 // Search questions based on name, difficulty, topic, subject, tags
 const searchQuestion = async (req, res) => {
   try {
@@ -369,6 +371,7 @@ const deleteQuestion = async (req, res) => {
   }
 };
 
+// Answer question
 const answerQuestion = async (req, res) => {
   try {
     const db = req.app.locals.db;
@@ -387,6 +390,7 @@ const answerQuestion = async (req, res) => {
       answer_id: new ObjectId(),
       user_id: new ObjectId(userId),
       answer: answer,
+      lastUpdated: new Date(),
     };
 
     const answerBank = await db
@@ -407,6 +411,109 @@ const answerQuestion = async (req, res) => {
   }
 };
 
+// Edit answer
+const editAnswer = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { id, answerId } = req.params;
+    const { userId, role } = req.user;
+    const { answer, feedback } = req.body;
+
+    let query = {};
+
+    // Must provide answer if student
+    if (role == "student") {
+      if (!answer)
+        return res.status(400).json({ message: "You must provide answer" });
+      query = {
+        "answerBank.$.answer": answer,
+        "answerBank.$.lastUpdated": new Date(),
+      };
+    }
+
+    // Must provide feedback if student
+    else if (role == "teacher") {
+      if (!feedback)
+        return res.status(400).json({ message: "You must provide feedback" });
+      query = {
+        "answerBank.$.feedback": feedback,
+        "answerBank.$.lastUpdated": new Date(),
+      };
+    } else {
+      return res.status(500).json({ message: "You are not authorized" });
+    }
+
+    const answerBank = await db.collection("questions").updateOne(
+      {
+        _id: new ObjectId(id),
+        "answerBank.answer_id": new ObjectId(answerId),
+      },
+      { $set: query }
+    );
+
+    if (answerBank.matchedCount == 0)
+      return res.status(400).json({ message: "Question or answer not found" });
+
+    return res.status(200).json({ message: "Answer edited successfully" });
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+// Delete Answer
+const deleteAnswer = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { userId, role } = req.user;
+    const { id, answerId } = req.params;
+
+    // Teacher can only remove their feedback
+    if (role === "teacher") {
+      const result = await db.collection("questions").updateOne(
+        {
+          _id: new ObjectId(id),
+          "answerBank.answer_id": new ObjectId(answerId),
+        },
+        {
+          $unset: { "answerBank.$.feedback": "" },
+        }
+      );
+
+      if (result.matchedCount == 0)
+        return res
+          .status(400)
+          .json({ message: "Question or answer not found" });
+    }
+    // Student can remove their answer
+    else if (role === "student") {
+      const result = await db.collection("questions").updateOne(
+        {
+          _id: new ObjectId(id),
+        },
+        {
+          $pull: {
+            answerBank: {
+              answer_id: new ObjectId(answerId),
+              userId: new ObjectId(userId),
+            },
+          },
+        }
+      );
+
+      if (result.matchedCount == 0)
+        return res
+          .status(400)
+          .json({ message: "Question or answer not found" });
+    }
+
+    res.status(200).json({ messsage: "Answer Bank updated successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 // Remove question (only for teacher that has the question)
 module.exports = {
   getQuestions,
@@ -415,4 +522,6 @@ module.exports = {
   editQuestion,
   deleteQuestion,
   answerQuestion,
+  editAnswer,
+  deleteAnswer,
 };
