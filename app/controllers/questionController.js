@@ -5,22 +5,10 @@ const getQuestions = async (req, res) => {
   try {
     const db = req.app.locals.db;
 
+    // Combine collections into one document
     const questions = await db
       .collection("questions")
       .aggregate([
-        {
-          $lookup: {
-            from: "users",
-            localField: "authorId",
-            foreignField: "_id",
-            as: "authorInfo",
-          },
-        },
-        {
-          $unwind: {
-            path: "$authorInfo",
-          },
-        },
         {
           $lookup: {
             from: "topics",
@@ -50,10 +38,8 @@ const getQuestions = async (req, res) => {
         {
           $project: {
             _id: 0,
-            authorId: 0,
             topicId: 0,
             subjectId: 0,
-            "authorInfo._id": 0,
             "topicInfo._id": 0,
             "subjectInfo._id": 0,
           },
@@ -61,11 +47,11 @@ const getQuestions = async (req, res) => {
       ])
       .toArray();
 
+    // Check if question exist
     if (questions.length == 0) {
       return res.status(400).json({ error: "No questions found" });
     }
 
-    // res.render("questions/bank", { questions });
     return res.status(200).json({ questions });
   } catch (error) {
     return res.status(500).json({ error: "Internal Server Error" });
@@ -383,6 +369,44 @@ const deleteQuestion = async (req, res) => {
   }
 };
 
+const answerQuestion = async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const { id } = req.params;
+    const { userId, role } = req.user;
+    const { answer } = req.body;
+
+    // Must provide answer if student
+    if (role !== "student") {
+      return res
+        .status(401)
+        .json({ message: "You must be a student to answer" });
+    }
+
+    const newAnswer = {
+      answer_id: new ObjectId(),
+      user_id: new ObjectId(userId),
+      answer: answer,
+    };
+
+    const answerBank = await db
+      .collection("questions")
+      .updateOne(
+        { _id: new ObjectId(id) },
+        { $push: { answerBank: newAnswer } }
+      );
+
+    if (answerBank.matchedCount == 0)
+      return res.status(400).json({ message: "Question not found" });
+
+    return res.status(200).json({ message: "Answer added successfully" });
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
 // Remove question (only for teacher that has the question)
 module.exports = {
   getQuestions,
@@ -390,4 +414,5 @@ module.exports = {
   addQuestion,
   editQuestion,
   deleteQuestion,
+  answerQuestion,
 };
