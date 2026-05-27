@@ -19,7 +19,6 @@ const getQuestions = async (req, res) => {
         {
           $unwind: {
             path: "$authorInfo",
-            preserveNullAndEmptyArrays: true,
           },
         },
         {
@@ -33,7 +32,6 @@ const getQuestions = async (req, res) => {
         {
           $unwind: {
             path: "$topicInfo",
-            preserveNullAndEmptyArrays: true,
           },
         },
         {
@@ -47,7 +45,6 @@ const getQuestions = async (req, res) => {
         {
           $unwind: {
             path: "$subjectInfo",
-            preserveNullAndEmptyArrays: true,
           },
         },
         {
@@ -75,7 +72,7 @@ const getQuestions = async (req, res) => {
   }
 };
 
-// Search questions based on name, difficulty, topic, subject
+// Search questions based on name, difficulty, topic, subject, tags
 const searchQuestion = async (req, res) => {
   try {
     const { name, difficulty, topic, subject, tags } = req.query;
@@ -229,7 +226,7 @@ const addQuestion = async (req, res) => {
       tags: tags.map((tag) => tag.toLowerCase()),
       authorId: new ObjectId(userId),
       topicId: topicDb._id,
-      subjectDb: subjectDb._id,
+      subjectId: subjectDb._id,
     };
 
     const result = await db.collection("questions").insertOne(newQuestion);
@@ -324,7 +321,7 @@ const editQuestion = async (req, res) => {
       difficulty: cleanDifficulty,
       options,
       correctAnswer,
-      tags,
+      tags: tags.map((tag) => tag.toLowerCase()),
       authorId: new ObjectId(userId),
       topicId: topicDb._id,
       subjectDb: subjectDb._id,
@@ -360,8 +357,14 @@ const editQuestion = async (req, res) => {
 const deleteQuestion = async (req, res) => {
   try {
     const db = req.app.locals.db;
-    const { id } = req.params;
+    const { id, role } = req.params;
     const { userId } = req.params;
+
+    if (role !== "teacher") {
+      return res
+        .status(400)
+        .json({ message: "You must be a teacher to proceed" });
+    }
 
     const result = await db.collection("questions").deleteOne({
       _id: new ObjectId(id),
