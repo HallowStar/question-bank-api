@@ -141,9 +141,10 @@ const searchQuestion = async (req, res) => {
 const addQuestion = async (req, res) => {
   try {
     const db = req.app.locals.db;
-    const { userId } = req.user;
+    const { userId, role } = req.user;
     const {
       text,
+      type,
       options,
       correctAnswer,
       difficulty,
@@ -152,12 +153,7 @@ const addQuestion = async (req, res) => {
       subjectCode,
     } = req.body;
 
-    // Check if user is a teacher
-    const user = await db
-      .collection("users")
-      .findOne({ _id: new ObjectId(userId) });
-
-    if (user.role !== "teacher")
+    if (role !== "teacher")
       return res
         .status(401)
         .json({ message: "You must be a teacher to proceed" });
@@ -165,13 +161,26 @@ const addQuestion = async (req, res) => {
     // Input Validation
     if (
       !text ||
+      !type ||
       !correctAnswer ||
-      !Array.isArray(options) ||
       !difficulty ||
       !topicCode ||
       !subjectCode
     ) {
       return res.status(400).json({ message: "Missing required field" });
+    }
+
+    if (type == "multiple-choice") {
+      if (!Array.isArray(options)) {
+        return res
+          .status(400)
+          .json({ message: "Multiple choice require at least 2 options" });
+      }
+    } else if (type !== "open-ended") {
+      return res.status(400).json({
+        message:
+          "Invalid question type (must be 'multiple-choice' or 'open-ended')",
+      });
     }
 
     const cleanDifficulty = difficulty.trim().toLowerCase();
@@ -184,7 +193,9 @@ const addQuestion = async (req, res) => {
       cleanDifficulty !== "easy" &&
       cleanDifficulty !== "hard"
     )
-      return res.status(400).json({ message: "Difficulty not valid" });
+      return res.status(400).json({
+        message: "Difficulty not valid (must be 'easy', 'medium' or 'hard'",
+      });
 
     // Check if tags are empty
     if (tags.length == 0)
@@ -205,11 +216,12 @@ const addQuestion = async (req, res) => {
     const newQuestion = {
       _id: new ObjectId(),
       text,
+      type,
       difficulty: cleanDifficulty,
       options,
       correctAnswer,
       tags,
-      authorId: user._id,
+      authorId: new ObjectId(userId),
       topicId: topicDb._id,
       subjectDb: subjectDb._id,
     };
@@ -229,10 +241,11 @@ const editQuestion = async (req, res) => {
   try {
     const db = req.app.locals.db;
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userId, role } = req.user;
 
     const {
       text,
+      type,
       options,
       correctAnswer,
       difficulty,
@@ -241,12 +254,7 @@ const editQuestion = async (req, res) => {
       subjectCode,
     } = req.body;
 
-    // Check if user is a teacher
-    const user = await db
-      .collection("users")
-      .findOne({ _id: new ObjectId(userId) });
-
-    if (user.role !== "teacher")
+    if (role !== "teacher")
       return res
         .status(401)
         .json({ message: "You must be a teacher to proceed" });
@@ -261,6 +269,19 @@ const editQuestion = async (req, res) => {
       !subjectCode
     ) {
       return res.status(400).json({ message: "Missing required field" });
+    }
+
+    if (type == "multiple-choice") {
+      if (!Array.isArray(options)) {
+        return res
+          .status(400)
+          .json({ message: "Multiple choice require at least 2 options" });
+      }
+    } else if (type !== "open-ended") {
+      return res.status(400).json({
+        message:
+          "Invalid question type (must be 'multiple-choice' or 'open-ended')",
+      });
     }
 
     const cleanDifficulty = difficulty.trim().toLowerCase();
@@ -291,11 +312,12 @@ const editQuestion = async (req, res) => {
     // Add question
     const newQuestion = {
       text,
+      type,
       difficulty: cleanDifficulty,
       options,
       correctAnswer,
       tags,
-      authorId: user._id,
+      authorId: new ObjectId(userId),
       topicId: topicDb._id,
       subjectDb: subjectDb._id,
     };
@@ -303,7 +325,7 @@ const editQuestion = async (req, res) => {
     const result = await db.collection("questions").updateOne(
       {
         _id: new ObjectId(id),
-        authorId: new ObjectId(user._id),
+        authorId: new ObjectId(userId),
       },
       {
         $set: newQuestion,
@@ -324,6 +346,18 @@ const editQuestion = async (req, res) => {
   }
 };
 
-// Remove question (only for teacher that has the question)
+const deleteQuestion = async (req, res) => {
+  try {
+  } catch (error) {
+    res.status(500).json({ message: "Question Deleted Successfully" });
+  }
+};
 
-module.exports = { getQuestions, searchQuestion, addQuestion, editQuestion };
+// Remove question (only for teacher that has the question)
+module.exports = {
+  getQuestions,
+  searchQuestion,
+  addQuestion,
+  editQuestion,
+  deleteQuestion,
+};

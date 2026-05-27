@@ -119,7 +119,7 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ error: "Incorrect Password" });
 
     // Generate access token
-    const accessToken = generateAccessToken(user._id, user.email);
+    const accessToken = generateAccessToken(user._id, user.email, user.role);
 
     return res.status(200).json({ message: "Login Successfull", accessToken });
   } catch (error) {
