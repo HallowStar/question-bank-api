@@ -71,7 +71,7 @@ const getQuestions = async (req, res) => {
     // res.render("questions/bank", { questions });
     return res.status(200).json({ questions });
   } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
@@ -228,9 +228,11 @@ const addQuestion = async (req, res) => {
 
     const result = await db.collection("questions").insertOne(newQuestion);
 
-    res.status(200).json({ message: "Question added successfully", result });
+    return res
+      .status(200)
+      .json({ message: "Question added successfully", result });
   } catch (error) {
-    res
+    return res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
   }
@@ -348,8 +350,22 @@ const editQuestion = async (req, res) => {
 
 const deleteQuestion = async (req, res) => {
   try {
+    const db = req.app.locals.db;
+    const { id } = req.params;
+
+    const result = await db.collection("questions").deleteOne({
+      _id: new ObjectId(id),
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    return res.status(200).json({ message: "Question deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Question Deleted Successfully" });
+    return res
+      .status(500)
+      .json({ message: "Question Deleted Successfully", result });
   }
 };
 
