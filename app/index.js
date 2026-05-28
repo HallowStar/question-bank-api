@@ -1,9 +1,6 @@
 // Import Libraries
 const express = require("express");
-const path = require("path");
-const expressLayouts = require("express-ejs-layouts");
 const cors = require("cors");
-const ejs = require("ejs");
 
 require("dotenv").config();
 const mongoURI = process.env.MONGO_URI;

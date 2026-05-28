@@ -61,7 +61,7 @@ TOKEN_SECRET=your_jwt_secret_key
 
 ---
 
-### 3. Run the Server
+### Run the Server
 
 ```bash
 node app/index.js
@@ -94,8 +94,6 @@ node app/index.js
 
 ## API DOCUMENTATION
 
----
-
 ### Authentication Endpoints
 
 ### Register User
@@ -111,6 +109,10 @@ POST
 #### Endpoint Path
 
 `/user/register`
+
+#### Access
+
+Public
 
 #### Body
 
@@ -166,6 +168,10 @@ POST
 
 `/user/login`
 
+#### Access
+
+Public
+
 #### Body
 
 ```json id="n8bf8m"
@@ -206,6 +212,10 @@ GET
 #### Endpoint Path
 
 `/api/subject`
+
+#### Access
+
+Teacher Only
 
 #### Body
 
@@ -248,6 +258,10 @@ GET
 
 `/api/subject/<id>`
 
+#### Access
+
+Teacher Only
+
 #### Body
 
 N/A
@@ -286,6 +300,10 @@ POST
 #### Endpoint Path
 
 `/api/subject`
+
+#### Access
+
+Teacher Only
 
 #### Body
 
@@ -332,6 +350,10 @@ PUT
 #### Endpoint Path
 
 `/api/subject/<id>`
+
+#### Access
+
+Teacher Only
 
 #### Body
 
@@ -381,6 +403,10 @@ DELETE
 
 `/api/subject/<id>`
 
+#### Access
+
+Teacher Only
+
 #### Body
 
 N/A
@@ -414,6 +440,10 @@ GET
 #### Endpoint Path
 
 `/api/topic`
+
+#### Access
+
+Teacher Only
 
 #### Body
 
@@ -455,6 +485,10 @@ POST
 
 `/api/topic`
 
+#### Access
+
+Teacher Only
+
 #### Body
 
 ```json id="vq9e3r"
@@ -487,6 +521,94 @@ POST
 
 ---
 
+### Edit an Existing Topic
+
+#### Title
+
+Edit an existing topic
+
+#### Method
+
+PUT
+
+#### Endpoint Path
+
+`/api/topic/<id>`
+
+#### Access
+
+Teacher Only
+
+#### Body
+
+```json id="gzzd3u"
+{
+  "name": "Derivatives Updated",
+  "subjectCode": "MATH101",
+  "description": "Introduction to derivatives",
+  "code": "DERIV01"
+}
+```
+
+#### Parameters
+
+- `id` (string): Unique ObjectId of the topic
+- `name` (string): Updated subject name
+- `subjectCode` (string): Updated subject of the topic
+- `description` (string): Updated description
+- `code` (string): Updated topic code
+
+#### Expected Response
+
+```json id="tbm87p"
+{
+  "message": "Topic updated successfully",
+  "result": {
+    "acknowledged": true,
+    "matchedCount": 1,
+    "modifiedCount": 1
+  }
+}
+```
+
+---
+
+### Delete a Subject
+
+#### Title
+
+Delete a Topic
+
+#### Method
+
+DELETE
+
+#### Endpoint Path
+
+`/api/subject/<id>`
+
+#### Access
+
+Teacher Only
+
+#### Body
+
+N/A
+
+#### Parameters
+
+- `id` (string): Unique ObjectId of the subject
+
+#### Expected Response
+
+```json id="h0fntx"
+{
+  "message": "Topic and related data deleted successfully"
+}
+```
+
+---
+
 ## Question Endpoints
 
 ### Retrieve All Questions
@@ -502,6 +624,10 @@ GET
 #### Endpoint Path
 
 `/api/question`
+
+#### Access
+
+Public
 
 #### Body
 
@@ -530,6 +656,48 @@ N/A
 
 ---
 
+### Search Question by ID
+
+#### Title
+
+Retrieve all questions
+
+#### Method
+
+GET
+
+#### Endpoint Path
+
+`/api/question/:id`
+
+#### Access
+
+Public
+
+#### Body
+
+N/A
+
+#### Parameters
+
+- `id` (string) : Unique ObjectID of the question
+
+#### Expected Response
+
+```json id="fyjlwm"
+{
+  "message": "Question found",
+  "result": {
+    "_id": "6a16b1f476c789ffa4293dc5",
+    "text": "What is 3x + 4 = 13 ?",
+    "type": "multiple-choice",
+    "difficulty": "easy"
+  }
+}
+```
+
+---
+
 ### Search Questions
 
 #### Title
@@ -543,6 +711,10 @@ GET
 #### Endpoint Path
 
 `/api/question/search?<query_parameters>`
+
+#### Access
+
+Public
 
 #### Body
 
@@ -587,6 +759,10 @@ POST
 
 `/api/question`
 
+#### Access
+
+Teacher Only
+
 #### Body
 
 ```json id="j7x28z"
@@ -627,6 +803,111 @@ POST
 
 ---
 
+### Edit a New Question
+
+#### Title
+
+Create a new question
+
+#### Method
+
+PUT
+
+#### Endpoint Path
+
+`/api/question/:id`
+
+#### Access
+
+Teacher Only
+
+#### Body
+
+```json id="j7x28z"
+{
+  "text": "What is the derivative of x Updated?",
+  "type": "multiple-choice",
+  "options": ["0", "1", "x", "2x"],
+  "correctAnswer": "1",
+  "difficulty": "medium",
+  "tags": ["calculus"],
+  "topicCode": "DERIV01",
+  "subjectCode": "MATH101"
+}
+```
+
+#### Parameters
+
+- `id` (string) : Unique ObjectID of the question
+- `text` (string): Updated question text
+- `type` (string): Updated question type
+- `options` (array): Updated multiple-choice options
+- `correctAnswer` (string): Updated correct answer
+- `difficulty` (string): Updated difficulty level
+- `tags` (array): Updated related tags
+- `topicCode` (string): Updated topic code
+- `subjectCode` (string): Updated subject code
+
+#### Expected Response
+
+```json id="fsdd8m"
+{
+  "message": "Question edited successfully",
+  "result": {
+    "acknowledged": true,
+    "modifiedCount": 1,
+    "upsertedId": null,
+    "upsertedCount": 0,
+    "matchedCount": 1
+  }
+}
+```
+
+---
+
+### Delete a Question
+
+#### Title
+
+Create a new question
+
+#### Method
+
+DELETE
+
+#### Endpoint Path
+
+`/api/question/:id`
+
+#### Access
+
+Teacher Only
+
+#### Body
+
+N/A
+
+#### Parameters
+
+- `id` (string) : Unique ObjectId of the question
+
+#### Expected Response
+
+```json id="fsdd8m"
+{
+  "message": "Question edited successfully",
+  "result": {
+    "acknowledged": true,
+    "modifiedCount": 1,
+    "upsertedId": null,
+    "upsertedCount": 0,
+    "matchedCount": 1
+  }
+}
+```
+
+---
+
 ## Answer Endpoints
 
 ### Submit an Answer
@@ -642,6 +923,10 @@ POST
 #### Endpoint Path
 
 `/api/question/<id>/answer`
+
+#### Access
+
+Student Only
 
 #### Body
 
@@ -670,7 +955,7 @@ POST
 
 #### Title
 
-Edit an answer or add feedback
+Edit an answer (student) or add feedback (teacher)
 
 #### Method
 
@@ -679,6 +964,10 @@ PUT
 #### Endpoint Path
 
 `/api/question/<id>/answer/<answerId>`
+
+#### Access
+
+Student or Teacher
 
 #### Body
 
@@ -719,6 +1008,10 @@ DELETE
 #### Endpoint Path
 
 `/api/question/<id>/answer/<answerId>`
+
+#### Access
+
+Student or Teacher (Their Own)
 
 #### Body
 
