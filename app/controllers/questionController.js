@@ -38,22 +38,35 @@ const getQuestions = async (req, res) => {
           },
         },
         {
+          $lookup: {
+            from: "users",
+            localField: "authorId",
+            foreignField: "_id",
+            as: "authorInfo",
+          },
+        },
+        {
+          $unwind: {
+            path: "$authorInfo",
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
           $project: {
             topicId: 0,
             subjectId: 0,
+            authorId: 0,
+            "authorInfo.passwordHash": 0,
           },
         },
       ])
       .toArray();
 
-    // Check if question exist
-    if (questions.length == 0) {
-      return res.status(400).json({ error: "No questions found" });
-    }
-
     return res.status(200).json({ questions });
   } catch (error) {
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 };
 
@@ -63,17 +76,22 @@ const searchQuestionById = async (req, res) => {
     const db = req.app.locals.db;
     const { id } = req.params;
 
-    console.log(id);
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid question ID format" });
+    }
 
     const result = await db
       .collection("questions")
       .findOne({ _id: new ObjectId(id) });
 
-    if (!result) return res.status(400).json({ message: "Question not found" });
+    if (!result) return res.status(404).json({ message: "Question not found" });
 
     return res.status(200).json({ message: "Question found", result });
   } catch (error) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 };
 
@@ -94,7 +112,7 @@ const searchQuestion = async (req, res) => {
     if (difficulty) {
       const difficultyArray = difficulty.split(",");
 
-      difficultyArray.map((d) => d.toLowerCase());
+      difficultyArray = difficultyArray.map((d) => d.toLowerCase());
 
       query.difficulty = { $in: difficultyArray };
     }
@@ -112,8 +130,9 @@ const searchQuestion = async (req, res) => {
     }
 
     // Check by tag
-    if (tags.length > 0) {
+    if (tags) {
       const tagArray = tags.split(",").map((tag) => tag.toLowerCase());
+      console.log(tagArray);
       query.tags = { $in: tagArray };
     }
 
@@ -124,7 +143,7 @@ const searchQuestion = async (req, res) => {
         .findOne({ code: subject.toUpperCase() });
 
       if (!subjectDb)
-        return res.status(400).json({ message: "Topic does not exist" });
+        return res.status(400).json({ message: "Subject does not exist" });
 
       query.subjectId = subjectDb._id;
     }
@@ -132,16 +151,11 @@ const searchQuestion = async (req, res) => {
     // Get results based on the query
     const result = await db.collection("questions").find(query).toArray();
 
-    // Check if question is found
-    if (result.length == 0) {
-      return res.status(404).json({ message: "Question not found" });
-    }
-
     return res.status(200).json({ message: "Question found", result: result });
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 
@@ -161,53 +175,11 @@ const addQuestion = async (req, res) => {
       subjectCode,
     } = req.body;
 
+    // Check if user is a teacher
     if (role !== "teacher")
       return res
         .status(401)
         .json({ message: "You must be a teacher to proceed" });
-
-    // Input Validation
-    if (
-      !text ||
-      !type ||
-      !correctAnswer ||
-      !difficulty ||
-      !topicCode ||
-      !subjectCode
-    ) {
-      return res.status(400).json({ message: "Missing required field" });
-    }
-
-    if (type == "multiple-choice") {
-      if (!Array.isArray(options)) {
-        return res
-          .status(400)
-          .json({ message: "Multiple choice require at least 2 options" });
-      }
-    } else if (type !== "open-ended") {
-      return res.status(400).json({
-        message:
-          "Invalid question type (must be 'multiple-choice' or 'open-ended')",
-      });
-    }
-
-    const cleanDifficulty = difficulty.trim().toLowerCase();
-
-    console.log(cleanDifficulty);
-
-    // Check if difficulty is valid
-    if (
-      cleanDifficulty !== "medium" &&
-      cleanDifficulty !== "easy" &&
-      cleanDifficulty !== "hard"
-    )
-      return res.status(400).json({
-        message: "Difficulty not valid (must be 'easy', 'medium' or 'hard'",
-      });
-
-    // Check if tags are empty
-    if (tags.length == 0)
-      return res.status(400).json({ message: "Missing Tags" });
 
     // Check if topic & subject exist
     const topicDb = await db.collection("topics").findOne({ code: topicCode });
@@ -222,13 +194,12 @@ const addQuestion = async (req, res) => {
 
     // Add question
     const newQuestion = {
-      _id: new ObjectId(),
       text,
       type,
-      difficulty: cleanDifficulty,
+      difficulty,
       options,
       correctAnswer,
-      tags: tags.map((tag) => tag.toLowerCase()),
+      tags,
       authorId: new ObjectId(userId),
       topicId: topicDb._id,
       subjectId: subjectDb._id,
@@ -266,47 +237,13 @@ const editQuestion = async (req, res) => {
 
     if (role !== "teacher")
       return res
-        .status(401)
+        .status(403)
         .json({ message: "You must be a teacher to proceed" });
 
-    // Input Validation
-    if (
-      !text ||
-      !correctAnswer ||
-      !Array.isArray(options) ||
-      !difficulty ||
-      !topicCode ||
-      !subjectCode
-    ) {
-      return res.status(400).json({ message: "Missing required field" });
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid question ID format" });
     }
-
-    if (type == "multiple-choice") {
-      if (!Array.isArray(options)) {
-        return res
-          .status(400)
-          .json({ message: "Multiple choice require at least 2 options" });
-      }
-    } else if (type !== "open-ended") {
-      return res.status(400).json({
-        message:
-          "Invalid question type (must be 'multiple-choice' or 'open-ended')",
-      });
-    }
-
-    const cleanDifficulty = difficulty.trim().toLowerCase();
-
-    // Check if difficulty is valid
-    if (
-      cleanDifficulty !== "medium" &&
-      cleanDifficulty !== "easy" &&
-      cleanDifficulty !== "hard"
-    )
-      return res.status(400).json({ message: "Difficulty not valid" });
-
-    // Check if tags are empty
-    if (tags.length == 0)
-      return res.status(400).json({ message: "Missing Tags" });
 
     // Check if topic & subject exist
     const topicDb = await db.collection("topics").findOne({ code: topicCode });
@@ -320,16 +257,16 @@ const editQuestion = async (req, res) => {
       return res.status(404).json({ message: "Subject does not exist" });
 
     // Add question
-    const newQuestion = {
+    const editQuestion = {
       text,
       type,
-      difficulty: cleanDifficulty,
+      difficulty,
       options,
       correctAnswer,
-      tags: tags.map((tag) => tag.toLowerCase()),
+      tags,
       authorId: new ObjectId(userId),
       topicId: topicDb._id,
-      subjectDb: subjectDb._id,
+      subjectId: subjectDb._id,
     };
 
     const result = await db.collection("questions").updateOne(
@@ -338,7 +275,7 @@ const editQuestion = async (req, res) => {
         authorId: new ObjectId(userId),
       },
       {
-        $set: newQuestion,
+        $set: editQuestion,
       }
     );
 
@@ -354,7 +291,7 @@ const editQuestion = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal server error", error: error.message });
+      .json({ message: "Internal server error", details: error.message });
   }
 };
 
@@ -362,13 +299,18 @@ const editQuestion = async (req, res) => {
 const deleteQuestion = async (req, res) => {
   try {
     const db = req.app.locals.db;
-    const { id, role } = req.params;
-    const { userId } = req.params;
+    const { id } = req.params;
+    const { userId, role } = req.user;
 
     if (role !== "teacher") {
       return res
-        .status(400)
+        .status(403)
         .json({ message: "You must be a teacher to proceed" });
+    }
+
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid question ID format" });
     }
 
     const result = await db.collection("questions").deleteOne({
@@ -382,9 +324,10 @@ const deleteQuestion = async (req, res) => {
 
     return res.status(200).json({ message: "Question deleted successfully" });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Question Deleted Successfully", error: error.message });
+    return res.status(500).json({
+      message: "Internal Server Error",
+      details: error.message,
+    });
   }
 };
 
@@ -396,12 +339,19 @@ const answerQuestion = async (req, res) => {
     const { userId, role } = req.user;
     const { answer } = req.body;
 
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid question ID format" });
+    }
+
     // Must provide answer if student
     if (role !== "student") {
       return res
-        .status(401)
+        .status(403)
         .json({ message: "You must be a student to answer" });
     }
+
+    if (!answer) return res.status(400).json({ message: "Answer is required" });
 
     const newAnswer = {
       answer_id: new ObjectId(),
@@ -410,21 +360,21 @@ const answerQuestion = async (req, res) => {
       lastUpdated: new Date(),
     };
 
-    const answerBank = await db
+    const result = await db
       .collection("questions")
       .updateOne(
         { _id: new ObjectId(id) },
         { $push: { answerBank: newAnswer } }
       );
 
-    if (answerBank.matchedCount == 0)
-      return res.status(400).json({ message: "Question not found" });
+    if (result.matchedCount == 0)
+      return res.status(404).json({ message: "Question not found" });
 
     return res.status(200).json({ message: "Answer added successfully" });
   } catch (error) {
     return res
-      .status(400)
-      .json({ message: "Internal Server Error", error: error.message });
+      .status(500)
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 
@@ -433,16 +383,30 @@ const editAnswer = async (req, res) => {
   try {
     const db = req.app.locals.db;
     const { id, answerId } = req.params;
-    const { userId, role } = req.user;
+    const { role, userId } = req.user;
     const { answer, feedback } = req.body;
 
-    let query = {};
+    // Check if ID is valid
+    if (!ObjectId.isValid(id) || !ObjectId.isValid(answerId)) {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
+
+    let updatedFields = {};
+
+    let queryFilter = {
+      _id: new ObjectId(id),
+      "answerBank.answer_id": new ObjectId(answerId),
+    };
 
     // Must provide answer if student
     if (role == "student") {
       if (!answer)
         return res.status(400).json({ message: "You must provide answer" });
-      query = {
+
+      // Only the students that answer it can edit their answer
+      queryFilter["answerBank.user_id"] = new ObjectId(userId);
+
+      updatedFields = {
         "answerBank.$.answer": answer,
         "answerBank.$.lastUpdated": new Date(),
       };
@@ -452,30 +416,26 @@ const editAnswer = async (req, res) => {
     else if (role == "teacher") {
       if (!feedback)
         return res.status(400).json({ message: "You must provide feedback" });
-      query = {
+      updatedFields = {
         "answerBank.$.feedback": feedback,
         "answerBank.$.lastUpdated": new Date(),
       };
     } else {
-      return res.status(500).json({ message: "You are not authorized" });
+      return res.status(403).json({ message: "You are not authorized" });
     }
 
-    const answerBank = await db.collection("questions").updateOne(
-      {
-        _id: new ObjectId(id),
-        "answerBank.answer_id": new ObjectId(answerId),
-      },
-      { $set: query }
-    );
+    const result = await db
+      .collection("questions")
+      .updateOne(queryFilter, { $set: updatedFields });
 
-    if (answerBank.matchedCount == 0)
-      return res.status(400).json({ message: "Question or answer not found" });
+    if (result.matchedCount == 0)
+      return res.status(404).json({ message: "Question or answer not found" });
 
     return res.status(200).json({ message: "Answer edited successfully" });
   } catch (error) {
     return res
       .status(400)
-      .json({ message: "Internal Server Error", error: error.message });
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 
@@ -485,6 +445,11 @@ const deleteAnswer = async (req, res) => {
     const db = req.app.locals.db;
     const { userId, role } = req.user;
     const { id, answerId } = req.params;
+
+    // Check if ID is valid
+    if (!ObjectId.isValid(id) || !ObjectId.isValid(answerId)) {
+      return res.status(400).json({ message: "Invalid ID format" });
+    }
 
     // Teacher can only remove their feedback
     if (role === "teacher") {
@@ -500,7 +465,7 @@ const deleteAnswer = async (req, res) => {
 
       if (result.matchedCount == 0)
         return res
-          .status(400)
+          .status(404)
           .json({ message: "Question or answer not found" });
     }
     // Student can remove their answer
@@ -508,12 +473,14 @@ const deleteAnswer = async (req, res) => {
       const result = await db.collection("questions").updateOne(
         {
           _id: new ObjectId(id),
+          "answerBank.answer_id": new ObjectId(answerId),
+          "answerBank.user_id": new ObjectId(userId),
         },
         {
           $pull: {
             answerBank: {
               answer_id: new ObjectId(answerId),
-              userId: new ObjectId(userId),
+              user_id: new ObjectId(userId),
             },
           },
         }
@@ -521,13 +488,17 @@ const deleteAnswer = async (req, res) => {
 
       if (result.matchedCount == 0)
         return res
-          .status(400)
+          .status(404)
           .json({ message: "Question or answer not found" });
+    } else {
+      return res.status(403).json({ message: "You are not authorized" });
     }
 
     res.status(200).json({ messsage: "Answer Bank updated successfully" });
   } catch (error) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 

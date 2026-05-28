@@ -5,6 +5,7 @@ const { ObjectId } = require("mongodb");
 const { generateAccessToken } = require("../middleware/authentication");
 const { isValidEmail } = require("../utils/validation");
 
+// Register User
 const registerUser = async (req, res) => {
   try {
     const db = req.app.locals.db;
@@ -88,6 +89,7 @@ const registerUser = async (req, res) => {
   }
 };
 
+// Login User
 const loginUser = async (req, res) => {
   try {
     const db = req.app.locals.db;

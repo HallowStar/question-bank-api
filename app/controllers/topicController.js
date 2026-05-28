@@ -24,7 +24,6 @@ const getTopics = async (req, res) => {
         },
         {
           $project: {
-            _id: 0,
             subjectId: 0,
             "subjectInfo._id": 0,
           },
@@ -32,15 +31,15 @@ const getTopics = async (req, res) => {
       ])
       .toArray();
 
-    if (topics.length == 0) {
-      return res.status(400).json({ error: "No topics found" });
-    }
-
-    return res.status(200).json({ topics });
+    return res
+      .status(200)
+      .json({ message: "Topics Found Successfully", topics });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Internal Server Error", error: error.message });
+    res.status(500).json({
+      error: "Internal Server Error",
+      error: error.message,
+      details: error.message,
+    });
   }
 };
 
@@ -50,15 +49,22 @@ const searchTopicById = async (req, res) => {
     const db = req.app.locals.db;
     const { id } = req.params;
 
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid topic ID format" });
+    }
+
     const result = await db
       .collection("topics")
       .findOne({ _id: new ObjectId(id) });
 
-    if (!result) return res.status(400).json({ message: "Topic not found" });
+    if (!result) return res.status(404).json({ message: "Topic not found" });
 
     return res.status(200).json({ message: "Topic found", result });
   } catch (error) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 
@@ -71,7 +77,7 @@ const addTopic = async (req, res) => {
 
     if (role !== "teacher")
       return res
-        .status(401)
+        .status(403)
         .json({ message: "You must be a teacher to proceed" });
 
     // Input Validation
@@ -79,21 +85,30 @@ const addTopic = async (req, res) => {
       return res.status(400).json({ message: "Missing required field" });
     }
 
-    // Check if subject exist
+    const cleanCode = code.toUpperCase();
+
+    // Check for duplicated topics
+    const existingTopic = await db
+      .collection("topics")
+      .findOne({ code: cleanCode });
+
+    if (existingTopic) {
+      return res.status(400).json({ message: "Topic already exist" });
+    }
+
     const subjectDb = await db
       .collection("subjects")
       .findOne({ code: subjectCode.toUpperCase() });
 
     if (!subjectDb)
-      return res.status(400).json({ message: "Subject does not exist" });
+      return res.status(404).json({ message: "Subject does not exist" });
 
     // Add question
     const newTopic = {
-      _id: new ObjectId(),
       name,
       subjectId: subjectDb._id,
       description,
-      code: code.toUpperCase(),
+      code: cleanCode,
     };
 
     const result = await db.collection("topics").insertOne(newTopic);
@@ -104,7 +119,7 @@ const addTopic = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 
@@ -114,12 +129,16 @@ const editTopic = async (req, res) => {
     const db = req.app.locals.db;
     const { id } = req.params;
     const { role } = req.user;
-
     const { name, subjectCode, description, code } = req.body;
+
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid topic ID format" });
+    }
 
     if (role !== "teacher")
       return res
-        .status(401)
+        .status(403)
         .json({ message: "You must be a teacher to proceed" });
 
     // Input Validation
@@ -127,6 +146,19 @@ const editTopic = async (req, res) => {
       return res.status(400).json({ message: "Missing required field" });
     }
 
+    const cleanCode = code.toUpperCase();
+
+    // Check for duplicated topic
+    const existingTopic = await db.collection("topics").findOne({
+      code: cleanCode,
+      _id: { $ne: new ObjectId(id) },
+    });
+
+    if (existingTopic) {
+      return res.status(403).json({ message: "Topic already exist" });
+    }
+
+    // Check if subject exist
     const subjectDb = await db
       .collection("subjects")
       .findOne({ code: subjectCode.toUpperCase() });
@@ -136,11 +168,11 @@ const editTopic = async (req, res) => {
     }
 
     // Add question
-    const newTopic = {
+    const editTopic = {
       name,
-      subjectCode,
+      subjectCode: subjectDb._id,
       description,
-      code: code.toUpperCase(),
+      code: cleanCode,
     };
 
     const result = await db.collection("topics").updateOne(
@@ -148,7 +180,7 @@ const editTopic = async (req, res) => {
         _id: new ObjectId(id),
       },
       {
-        $set: newTopic,
+        $set: editTopic,
       }
     );
 
@@ -162,7 +194,7 @@ const editTopic = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal server error", error: error.message });
+      .json({ message: "Internal server error", details: error.message });
   }
 };
 
@@ -172,6 +204,11 @@ const deleteTopic = async (req, res) => {
     const db = req.app.locals.db;
     const { id } = req.params;
     const { role } = req.user;
+
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid topic ID format" });
+    }
 
     if (role !== "teacher") {
       return res
@@ -184,16 +221,17 @@ const deleteTopic = async (req, res) => {
     });
 
     if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "Subject not found" });
+      return res.status(404).json({ message: "Topic not found" });
     }
 
+    // Delete questions with the topic
     await db.collection("questions").deleteMany({ topicId: new ObjectId(id) });
 
     return res.status(200).json({ message: "Topic deleted successfully" });
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 

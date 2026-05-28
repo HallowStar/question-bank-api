@@ -5,22 +5,15 @@ const getSubjects = async (req, res) => {
   try {
     const db = req.app.locals.db;
 
-    const subjects = await db
-      .collection("subjects")
-      .find()
-      .project({ _id: 0 })
-      .toArray();
+    const subjects = await db.collection("subjects").find().toArray();
 
-    if (subjects.length == 0) {
-      return res.status(400).json({ error: "No subjects found" });
-    }
-
-    // res.render("questions/bank", { questions });
-    return res.status(200).json({ subjects });
+    return res
+      .status(200)
+      .json({ message: "Subject Found Successfully", subjects });
   } catch (error) {
     res
       .status(500)
-      .json({ error: "Internal Server Error", error: error.message });
+      .json({ error: "Internal Server Error", details: error.message });
   }
 };
 
@@ -30,17 +23,22 @@ const searchSubjectById = async (req, res) => {
     const db = req.app.locals.db;
     const { id } = req.params;
 
-    console.log(id);
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid subject ID format" });
+    }
 
     const result = await db
       .collection("subjects")
       .findOne({ _id: new ObjectId(id) });
 
-    if (!result) return res.status(400).json({ message: "Subject not found" });
+    if (!result) return res.status(404).json({ message: "Subject not found" });
 
     return res.status(200).json({ message: "Subject found", result });
   } catch (error) {
-    return res.status(500).json({ message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 
@@ -61,13 +59,25 @@ const addSubject = async (req, res) => {
       return res.status(400).json({ message: "Missing required field" });
     }
 
+    const cleanCode = code.toUpperCase();
+
+    // Check for any duplicated subjects
+    const existingSubject = await db
+      .collection("subjects")
+      .findOne({ code: cleanCode });
+
+    if (existingSubject) {
+      return res.status(400).json({
+        message: "The subject already exist",
+      });
+    }
+
     // Add question
     const newSubject = {
-      _id: new ObjectId(),
       name,
       department,
       description,
-      code: code.toUpperCase(),
+      code: cleanCode,
     };
 
     const result = await db.collection("subjects").insertOne(newSubject);
@@ -78,7 +88,7 @@ const addSubject = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 
@@ -91,10 +101,31 @@ const editSubject = async (req, res) => {
 
     const { name, department, description, code } = req.body;
 
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid subject ID format" });
+    }
+
     if (role !== "teacher")
       return res
-        .status(401)
+        .status(403)
         .json({ message: "You must be a teacher to proceed" });
+
+    const cleanCode = code.toUpperCase();
+
+    // Check for any subject duplicates
+    const existingSubject = await db.collection("subjects").findOne({
+      code: cleanCode,
+      _id: { $ne: new ObjectId(id) }, // $ne means "Not Equal"
+    });
+
+    console.log(existingSubject);
+
+    if (existingSubject) {
+      return res.status(400).json({
+        message: "Subject already exist",
+      });
+    }
 
     // Input Validation
     if (!name || !department || !description || !code) {
@@ -102,11 +133,11 @@ const editSubject = async (req, res) => {
     }
 
     // Add question
-    const newSubject = {
+    const editSubject = {
       name,
       department,
       description,
-      code: code.toUpperCase(),
+      code: cleanCode,
     };
 
     const result = await db.collection("subjects").updateOne(
@@ -114,7 +145,7 @@ const editSubject = async (req, res) => {
         _id: new ObjectId(id),
       },
       {
-        $set: newSubject,
+        $set: editSubject,
       }
     );
 
@@ -128,7 +159,7 @@ const editSubject = async (req, res) => {
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal server error", error: error.message });
+      .json({ message: "Internal server error", details: error.message });
   }
 };
 
@@ -145,6 +176,11 @@ const deleteSubject = async (req, res) => {
         .json({ message: "You must be a teacher to proceed" });
     }
 
+    // Check if ID is valid
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid subject ID format" });
+    }
+
     const result = await db.collection("subjects").deleteOne({
       _id: new ObjectId(id),
     });
@@ -153,17 +189,20 @@ const deleteSubject = async (req, res) => {
       return res.status(404).json({ message: "Subject not found" });
     }
 
+    // Delete questions or topics that is related to the subject
     await db
       .collection("questions")
       .deleteMany({ subjectId: new ObjectId(id) });
 
     await db.collection("topics").deleteMany({ subjectId: new ObjectId(id) });
 
-    return res.status(200).json({ message: "Subject deleted successfully" });
+    return res
+      .status(200)
+      .json({ message: "Subject and related data deleted successfully" });
   } catch (error) {
     return res
       .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+      .json({ message: "Internal Server Error", details: error.message });
   }
 };
 
