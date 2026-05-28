@@ -8,7 +8,7 @@ Question Bank is an API that provides questions for students created by teachers
 
 - **Runtime:** Node.js
 - **Framework:** Express.js
-- **Database:** MongoDB (Native Driver)
+- **Database:** MongoDB
 - **Security:** JSON Web Tokens (JWT), Bcrypt (Password Hashing)
 
 ---
@@ -89,6 +89,12 @@ node app/index.js
   - Submit answers
   - Edit answers
   - Delete their own answers
+
+---
+
+## Testing Application
+
+Postman / Advanced Rest Client
 
 ---
 
@@ -573,7 +579,7 @@ Teacher Only
 
 ---
 
-### Delete a Subject
+### Delete a Topic
 
 #### Title
 
