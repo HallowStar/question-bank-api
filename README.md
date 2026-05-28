@@ -44,7 +44,7 @@ app/
 ### Install Dependencies
 
 ```bash
-npm install express mongodb dotenv cors ejs jsonwebtoken bcrypt
+npm install express mongodb dotenv cors jsonwebtoken bcrypt
 ```
 
 ---
@@ -96,23 +96,23 @@ node app/index.js
 
 ---
 
-# Authentication Endpoints
+### Authentication Endpoints
 
-## Register User
+### Register User
 
-### Title
+#### Title
 
 Register User
 
-### Method
+#### Method
 
 POST
 
-### Endpoint Path
+#### Endpoint Path
 
 `/user/register`
 
-### Body
+#### Body
 
 ```json id="b14esv"
 {
@@ -127,7 +127,7 @@ POST
 }
 ```
 
-### Parameters
+#### Parameters
 
 - `name` (string): The full name of the user
 - `contact` (string/number): The contact number of the user
@@ -138,7 +138,7 @@ POST
 - `address` (string): The physical address of the user
 - `role` (string): The role of the user (`teacher` or `student`)
 
-### Expected Response
+#### Expected Response
 
 ```json id="sgihla"
 {
@@ -152,21 +152,21 @@ POST
 
 ---
 
-## Login User
+### Login User
 
-### Title
+#### Title
 
 Login User
 
-### Method
+#### Method
 
 POST
 
-### Endpoint Path
+#### Endpoint Path
 
 `/user/login`
 
-### Body
+#### Body
 
 ```json id="n8bf8m"
 {
@@ -175,12 +175,12 @@ POST
 }
 ```
 
-### Parameters
+#### Parameters
 
 - `email` (string): Registered email address
 - `password` (string): Account password
 
-### Expected Response
+#### Expected Response
 
 ```json id="wwy4gs"
 {
@@ -191,31 +191,31 @@ POST
 
 ---
 
-# Subject Endpoints
+## Subject Endpoints
 
-## Retrieve All Subjects
+### Retrieve All Subjects
 
-### Title
+#### Title
 
 Retrieve all subjects
 
-### Method
+#### Method
 
 GET
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/subject`
 
-### Body
+#### Body
 
 N/A
 
-### Parameters
+#### Parameters
 
 N/A
 
-### Expected Response
+#### Expected Response
 
 ```json id="e8f9u4"
 {
@@ -234,29 +234,29 @@ N/A
 
 ---
 
-## Get Details of a Single Subject
+### Get Details of a Single Subject
 
-### Title
+#### Title
 
 Get details of a single subject
 
-### Method
+#### Method
 
 GET
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/subject/<id>`
 
-### Body
+#### Body
 
 N/A
 
-### Parameters
+#### Parameters
 
 - `id` (string): Unique ObjectId of the subject
 
-### Expected Response
+#### Expected Response
 
 ```json id="vc1wpm"
 {
@@ -273,21 +273,21 @@ N/A
 
 ---
 
-## Create a New Subject
+### Create a New Subject
 
-### Title
+#### Title
 
 Create a new subject
 
-### Method
+#### Method
 
 POST
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/subject`
 
-### Body
+#### Body
 
 ```json id="g0g8ei"
 {
@@ -298,14 +298,14 @@ POST
 }
 ```
 
-### Parameters
+#### Parameters
 
 - `name` (string): Subject name
 - `department` (string): Department name
 - `description` (string): Subject description
 - `code` (string): Unique subject code
 
-### Expected Response
+#### Expected Response
 
 ```json id="7i6uzn"
 {
@@ -319,21 +319,21 @@ POST
 
 ---
 
-## Edit an Existing Subject
+### Edit an Existing Subject
 
-### Title
+#### Title
 
 Edit an existing subject
 
-### Method
+#### Method
 
 PUT
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/subject/<id>`
 
-### Body
+#### Body
 
 ```json id="gzzd3u"
 {
@@ -344,7 +344,7 @@ PUT
 }
 ```
 
-### Parameters
+#### Parameters
 
 - `id` (string): Unique ObjectId of the subject
 - `name` (string): Updated subject name
@@ -352,7 +352,7 @@ PUT
 - `description` (string): Updated description
 - `code` (string): Updated subject code
 
-### Expected Response
+#### Expected Response
 
 ```json id="tbm87p"
 {
@@ -367,29 +367,29 @@ PUT
 
 ---
 
-## Delete a Subject
+### Delete a Subject
 
-### Title
+#### Title
 
 Delete a subject
 
-### Method
+#### Method
 
 DELETE
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/subject/<id>`
 
-### Body
+#### Body
 
 N/A
 
-### Parameters
+#### Parameters
 
 - `id` (string): Unique ObjectId of the subject
 
-### Expected Response
+#### Expected Response
 
 ```json id="h0fntx"
 {
@@ -399,31 +399,31 @@ N/A
 
 ---
 
-# Topic Endpoints
+## Topic Endpoints
 
-## Retrieve All Topics
+### Retrieve All Topics
 
-### Title
+#### Title
 
 Retrieve all topics
 
-### Method
+#### Method
 
 GET
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/topic`
 
-### Body
+#### Body
 
 N/A
 
-### Parameters
+#### Parameters
 
 N/A
 
-### Expected Response
+#### Expected Response
 
 ```json id="46m0r8"
 {
@@ -441,21 +441,21 @@ N/A
 
 ---
 
-## Create a New Topic
+### Create a New Topic
 
-### Title
+#### Title
 
 Create a new topic
 
-### Method
+#### Method
 
 POST
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/topic`
 
-### Body
+#### Body
 
 ```json id="vq9e3r"
 {
@@ -466,14 +466,14 @@ POST
 }
 ```
 
-### Parameters
+#### Parameters
 
 - `name` (string): Topic name
 - `subjectCode` (string): Related subject code
 - `description` (string): Topic description
 - `code` (string): Unique topic code
 
-### Expected Response
+#### Expected Response
 
 ```json id="q01hhg"
 {
@@ -487,31 +487,31 @@ POST
 
 ---
 
-# Question Endpoints
+## Question Endpoints
 
-## Retrieve All Questions
+### Retrieve All Questions
 
-### Title
+#### Title
 
 Retrieve all questions
 
-### Method
+#### Method
 
 GET
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/question`
 
-### Body
+#### Body
 
 N/A
 
-### Parameters
+#### Parameters
 
 N/A
 
-### Expected Response
+#### Expected Response
 
 ```json id="fyjlwm"
 {
@@ -530,25 +530,25 @@ N/A
 
 ---
 
-## Search Questions
+### Search Questions
 
-### Title
+#### Title
 
 Search questions by query parameters
 
-### Method
+#### Method
 
 GET
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/question/search?<query_parameters>`
 
-### Body
+#### Body
 
 N/A
 
-### Parameters
+#### Parameters
 
 - `name` (string): Regex search for question text
 - `difficulty` (string): Comma-separated difficulty list
@@ -556,7 +556,7 @@ N/A
 - `subject` (string): Subject code
 - `tags` (string): Comma-separated tags
 
-### Expected Response
+#### Expected Response
 
 ```json id="vlm20o"
 {
@@ -573,21 +573,21 @@ N/A
 
 ---
 
-## Create a New Question
+### Create a New Question
 
-### Title
+#### Title
 
 Create a new question
 
-### Method
+#### Method
 
 POST
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/question`
 
-### Body
+#### Body
 
 ```json id="j7x28z"
 {
@@ -602,7 +602,7 @@ POST
 }
 ```
 
-### Parameters
+#### Parameters
 
 - `text` (string): Question text
 - `type` (string): Question type
@@ -613,7 +613,7 @@ POST
 - `topicCode` (string): Topic code
 - `subjectCode` (string): Subject code
 
-### Expected Response
+#### Expected Response
 
 ```json id="fsdd8m"
 {
@@ -627,23 +627,23 @@ POST
 
 ---
 
-# Answer Endpoints
+## Answer Endpoints
 
-## Submit an Answer
+### Submit an Answer
 
-### Title
+#### Title
 
 Submit an answer to a question
 
-### Method
+#### Method
 
 POST
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/question/<id>/answer`
 
-### Body
+#### Body
 
 ```json id="m1a1ry"
 {
@@ -651,12 +651,12 @@ POST
 }
 ```
 
-### Parameters
+#### Parameters
 
 - `id` (string): Question ObjectId
 - `answer` (string): Student answer
 
-### Expected Response
+#### Expected Response
 
 ```json id="qpd82y"
 {
@@ -666,21 +666,21 @@ POST
 
 ---
 
-## Edit an Answer or Add Feedback
+### Edit an Answer or Add Feedback
 
-### Title
+#### Title
 
 Edit an answer or add feedback
 
-### Method
+#### Method
 
 PUT
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/question/<id>/answer/<answerId>`
 
-### Body
+#### Body
 
 ```json id="c68z9r"
 {
@@ -689,14 +689,14 @@ PUT
 }
 ```
 
-### Parameters
+#### Parameters
 
 - `id` (string): Question ObjectId
 - `answerId` (string): Answer ObjectId
 - `answer` (string): Updated answer
 - `feedback` (string): Teacher feedback
 
-### Expected Response
+#### Expected Response
 
 ```json id="h92mhh"
 {
@@ -706,9 +706,9 @@ PUT
 
 ---
 
-## Delete an Answer or Remove Feedback
+### Delete an Answer or Remove Feedback
 
-### Title
+#### Title
 
 Delete an answer or remove feedback
 
@@ -716,20 +716,20 @@ Delete an answer or remove feedback
 
 DELETE
 
-### Endpoint Path
+#### Endpoint Path
 
 `/api/question/<id>/answer/<answerId>`
 
-### Body
+#### Body
 
 N/A
 
-### Parameters
+#### Parameters
 
 - `id` (string): Question ObjectId
 - `answerId` (string): Answer ObjectId
 
-### Expected Response
+#### Expected Response
 
 ```json id="if45gj"
 {
